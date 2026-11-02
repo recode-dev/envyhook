@@ -28,4 +28,9 @@ bool envy_memory_patch_code(uintptr_t addr, size_t len, EnvyPatchCodeFunc func, 
 bool envy_memory_patch_code_value(uintptr_t addr, const void *bytes, size_t len);
 void envy_clear_cache(uintptr_t addr, size_t len);
 
+uintptr_t envy_alloc_n_pages(size_t n_pages, EnvyPageProtection prot);
+uintptr_t envy_alloc_n_pages_near(size_t n_pages, EnvyPageProtection prot, uintptr_t near_value,
+                                  uintptr_t max_distance);
+void envy_free_pages(uintptr_t address);
+
 #endif
