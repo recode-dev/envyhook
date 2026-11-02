@@ -281,31 +281,30 @@ uintptr_t envy_alloc_n_pages_near(size_t n_pages, EnvyPageProtection prot, uintp
     size_t total = n_pages * (size_t)vm_page_size;
     if (max_distance < total)
         return 0;
+    uintptr_t ps = (uintptr_t)vm_page_size;
     uintptr_t limit = max_distance - total;
-    uintptr_t step = (total < 0x100000u) ? 0x100000u : total;
-    unsigned attempts = 0;
+    uintptr_t base = near_value & ~(ps - 1);
+    uintptr_t step = (total < ps) ? ps : total;
 
-    for (uintptr_t i = 0;; i += step) {
+    for (uintptr_t i = 0; i <= limit; i += step) {
         uintptr_t candidates[2];
-        candidates[0] = (i <= near_value) ? near_value - i : 0;
-        candidates[1] = (i <= (uintptr_t)-1 - near_value) ? near_value + i : 0;
-        for (int c = 0; c < 2; c++) {
+        candidates[0] = (i <= base) ? base - i : 0;
+        candidates[1] = (i <= (uintptr_t)-1 - base) ? base + i : 0;
+        for (int c = (i == 0) ? 1 : 0; c < 2; c++) {
             if (candidates[c] == 0)
                 continue;
             vm_address_t addr = (vm_address_t)candidates[c];
-            if (vm_allocate(mach_task_self(), &addr, (vm_size_t)total, VM_FLAGS_ANYWHERE) != KERN_SUCCESS)
+            if (vm_allocate(mach_task_self(), &addr, (vm_size_t)total, VM_FLAGS_FIXED) != KERN_SUCCESS)
                 continue;
-            uintptr_t got = (uintptr_t)addr;
-            uintptr_t delta = (got > near_value) ? got - near_value : near_value - got;
-            if (delta <= limit && apply_page_prot(got, total, prot))
-                return got;
+            if (apply_page_prot((uintptr_t)addr, total, prot))
+                return (uintptr_t)addr;
             vm_deallocate(mach_task_self(), addr, (vm_size_t)total);
-            if (delta <= limit)
-                return 0;
-        }
-        if (++attempts > 1024 || i > limit || i + step < i)
             return 0;
+        }
+        if (i + step < i)
+            break;
     }
+    return 0;
 }
 
 void envy_free_pages(uintptr_t address)

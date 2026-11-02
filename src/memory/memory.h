@@ -5,6 +5,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef uint32_t EnvyPageProtection;
 
 #define ENVY_PAGE_NO_PROTECTION 0
@@ -32,5 +36,9 @@ uintptr_t envy_alloc_n_pages(size_t n_pages, EnvyPageProtection prot);
 uintptr_t envy_alloc_n_pages_near(size_t n_pages, EnvyPageProtection prot, uintptr_t near_value,
                                   uintptr_t max_distance);
 void envy_free_pages(uintptr_t address);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
